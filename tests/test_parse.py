@@ -1,20 +1,18 @@
-"""Parsing tests on a saved page: fast, no network. Add a saved page for every layout your site has."""
-from pathlib import Path
+import gzip, pathlib
+from parse import parse, strip
 
-import crawl
-
-PAGES = Path(__file__).parent / "pages"
+P = pathlib.Path(__file__).parent / "pages"
 
 
-def test_catalogue_page_gives_twenty_books():
-    rows = crawl.parse((PAGES / "catalogue-page-1.html").read_text(encoding="utf-8"))
-    assert len(rows) == 20
-    rid, book = rows[0]
-    assert rid == "a-light-in-the-attic_1000"                       # the site's own id: stable across runs
-    assert book["title"] == "A Light in the Attic" and book["price"] == "£51.77" and book["availability"] == "In stock"
-    assert book["url"].startswith("https://books.toscrape.com/catalogue/")
-    assert len({r for r, _ in rows}) == 20                          # no duplicate ids on a page
+def test_company_page():
+    r = parse(gzip.open(P / "U80302DL2011PLC213843.html.gz", "rt", encoding="utf-8").read())
+    assert {d["din"] for d in r["directors"]} == {"02005761", "01909098", "01200719"}
+    assert r["former_name"] == "Edutronics Innovative Education Limited"
+    assert r["last_left"] == "Sudhanshu Sharma"
+    assert r["paidup"] == "5.00 Lakh"
+    assert any(c["name"] == "Prepgenius Llp" and c["n_shared"] == 1 for c in r["common"])
 
 
-def test_an_empty_page_gives_nothing():
-    assert crawl.parse("<html><body>No products</body></html>") == []
+def test_strip_keeps_fields():
+    d = gzip.open(P / "U80302DL2011PLC213843.html.gz", "rt", encoding="utf-8").read()
+    assert parse(strip(d))["directors"] == parse(d)["directors"]

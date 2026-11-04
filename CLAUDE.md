@@ -1,3 +1,7 @@
+# Family infyner
+
+Task `pages` in `pages.py`; parser `parse.py`, tested on `tests/pages/`. Add a company list as `data/<list>.tsv.gz` and a project in `family.py`. Running Setup resets workers and speed to the values in family.py. Only /company/ pages: never the paid tabs, never a login, never a challenge solver.
+
 # CLAUDE.md: how this repo works (s1d-labs scrape pool family)
 
 This repo is one **family** of the s1d-labs scrape pool: scrapers that run on members' GitHub Actions minutes, coordinated by

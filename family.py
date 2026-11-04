@@ -1,27 +1,23 @@
-"""What this family scrapes. Change this file first.
-
-FAMILY must equal the repo name (s1d-labs/<FAMILY>) and the family the hub owner added on scrape.s1d.me/runners.
-Each project is one queue of work on one site; `target` is the host it hits (the hub caps workers per target).
-"""
-import json
+"""Public company pages on www.infyner.com. One queue item = 50 companies. The lists in data/ are CIN + name from the MCA master."""
+import gzip, json
 from pathlib import Path
 
-FAMILY = json.loads((Path(__file__).parent / "scrape.json").read_text())["family"]
+HERE = Path(__file__).parent
+FAMILY = json.loads((HERE / "scrape.json").read_text())["family"]
+SIZE = 50
+
+
+def items(list_name):
+    rows = [l.rstrip("\n").split("\t") for l in gzip.open(HERE / "data" / f"{list_name}.tsv.gz", "rt", encoding="utf-8")]
+    out = []
+    for i in range(0, len(rows), SIZE):
+        part = rows[i:i + SIZE]
+        out.append({"key": f"{list_name}-{i // SIZE:06d}", "payload": {"companies": part, "expected": len(part)}})
+    return out
+
 
 PROJECTS = [
-    {
-        "name": f"{FAMILY}-books",              # project names: 2-64 chars of a-z 0-9 - _, start them with the family name
-        "title": "Books to Scrape catalogue",
-        "task": "crawl",                         # a task from scrape.json
-        "target": "books.toscrape.com",
-        "env": {"SITE": "https://books.toscrape.com"},
-        "probe": f"{FAMILY}:books.toscrape.com",
-        "unit_label": "page", "record_label": "book",
-        # the queue: one item per catalogue page; `expected` (records per item) gives progress and ETAs on the dashboard
-        "items": [{"key": f"page-{n}", "payload": {"url": f"https://books.toscrape.com/catalogue/page-{n}.html", "expected": 20}}
-                  for n in range(1, 51)],
-    },
+    {"name": f"{FAMILY}-gem-sellers", "title": "Company pages: GeM sellers", "list": "gem_sellers", "task": "pages", "target": "www.infyner.com", "env": {},
+     "probe": f"{FAMILY}:www.infyner.com", "unit_label": "batch", "record_label": "company", "max_workers": 4, "threads": 2, "delay_ms": 300},
 ]
-
-# health checks the hub runs every minute; work for a project holds while its probe fails
-PROBES = [{"name": f"{FAMILY}:books.toscrape.com", "url": "https://books.toscrape.com/", "expect": "All products"}]
+PROBES = [{"name": f"{FAMILY}:www.infyner.com", "url": "https://www.infyner.com/robots.txt", "expect": "Disallow"}]
