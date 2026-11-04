@@ -1,8 +1,13 @@
 {
-  "family": "example",
-  "about": "Example family: books.toscrape.com (a public site made for scraping practice). Copy this repo and change it.",
-  "setup": ["pip install -r requirements.txt"],
+  "family": "infyner",
+  "about": "Infyner public company pages: directors, former names, size bands, boards in common",
+  "setup": [
+    "pip install -r requirements.txt"
+  ],
   "tasks": {
-    "crawl": ["python", "crawl.py"]
+    "crawl": [
+      "python",
+      "crawl.py"
+    ]
   }
 }
