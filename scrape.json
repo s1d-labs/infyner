@@ -1,8 +1,17 @@
 {
   "family": "infyner",
   "about": "Public company pages on infyner.com (/company/ only, allowed by the site's robots.txt): current directors with DIN, former names, boards in common, size bands. No login and no paid tabs.",
-  "setup": ["pip install -r requirements.txt"],
+  "setup": [
+    "pip install -r requirements.txt"
+  ],
   "tasks": {
-    "pages": ["python", "pages.py"]
+    "pages": [
+      "python",
+      "pages.py"
+    ],
+    "corpdir": [
+      "python",
+      "corpdir.py"
+    ]
   }
 }

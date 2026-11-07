@@ -24,5 +24,12 @@ PROJECTS = [
     {"name": f"{FAMILY}-graph", "title": "Company pages: public-money companies without directors (graph gaps)", "list": "graph_priority",
      "task": "pages", "target": "www.infyner.com", "env": {}, "probe": f"{FAMILY}:www.infyner.com", "unit_label": "batch",
      "record_label": "company", "max_workers": 16, "threads": 4, "delay_ms": 300},
+    # Alternate director source (corporatedir.com), for the same graph-gap companies: it serves the slug /company/ page over
+    # plain HTTP, so this runs on GitHub runners (no India server, no proxy). Used when infyner is unavailable.
+    {"name": f"{FAMILY}-corpdir", "title": "corporatedir directors: public-money companies without directors (graph gaps)",
+     "list": "graph_priority", "task": "corpdir", "target": "www.corporatedir.com", "env": {},
+     "probe": f"{FAMILY}:www.corporatedir.com", "unit_label": "batch", "record_label": "company", "max_workers": 10,
+     "threads": 3, "delay_ms": 400},
 ]
-PROBES = [{"name": f"{FAMILY}:www.infyner.com", "url": "https://www.infyner.com/robots.txt", "expect": "Disallow"}]
+PROBES = [{"name": f"{FAMILY}:www.infyner.com", "url": "https://www.infyner.com/robots.txt", "expect": "Disallow"},
+          {"name": f"{FAMILY}:www.corporatedir.com", "url": "https://www.corporatedir.com/robots.txt", "expect": "ser"}]
