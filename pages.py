@@ -4,7 +4,7 @@ import gzip, io, os, re, sys, tarfile, threading, time
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
-from scrape_hub_client import HubClient
+from scrape_hub_client import HubClient, timed_get
 
 from parse import parse, strip
 
@@ -30,23 +30,20 @@ def session():
 
 def fetch(hub, cin, name):
     """-> (status, html): ok, missing, block, error."""
-    t = time.time()
-    try:
-        r = session().get(f"{SITE}/company/{slug(name) or 'company'}/{cin}", timeout=45)
-    except requests.RequestException:
-        hub.metric("http_error"); hub.error()
+    # counts n_http, t_http_s, http_<code> (404 too), http_error + hub.error(); 403/429/503 -> hub.block()
+    r = timed_get(hub, session(), f"{SITE}/company/{slug(name) or 'company'}/{cin}", timeout=45)
+    if r is None:
         return "error", None
-    hub.metric("n_http"); hub.metric("t_http_s", time.time() - t)
     if r.status_code == 404:
-        hub.metric("http_404")
         return "missing", None
     if r.status_code in (403, 429, 503) or (r.status_code == 200 and CHALLENGE.search(r.text[:20000])):
-        hub.metric(f"http_{r.status_code}" if r.status_code != 200 else "http_challenge"); hub.block()
+        if r.status_code == 200:           # a challenge page: timed_get counted no code and no block
+            hub.metric("http_challenge"); hub.block()
         ra = r.headers.get("Retry-After", "")
         wait_until[0] = max(wait_until[0], time.time() + (int(ra) if ra.isdigit() else 120))
         return "block", None
     if r.status_code != 200:
-        hub.metric(f"http_{r.status_code}"); hub.error()
+        hub.error()                        # timed_get counted http_<code>
         return "error", None
     if not r.url.rstrip("/").endswith(cin):
         hub.metric("wrong_page")
