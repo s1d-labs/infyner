@@ -72,7 +72,7 @@ def work_item(hub, item, pool, delay):
         return row[0], st, doc
 
     res = list(pool.map(one, rows))
-    tarb = io.BytesIO(); ok = 0
+    tarb = io.BytesIO(); ok = 0; pages = 0
     with tarfile.open(fileobj=tarb, mode="w") as tf:
         for cin, st, doc in res:
             if st == "ok":
@@ -81,7 +81,7 @@ def work_item(hub, item, pool, delay):
                 if d["found"]:
                     raw = gzip.compress(strip(doc).encode("utf-8"), 6)
                     ti = tarfile.TarInfo(f"{cin}.html.gz"); ti.size = len(raw)
-                    tf.addfile(ti, io.BytesIO(raw))
+                    tf.addfile(ti, io.BytesIO(raw)); pages += 1
                     # the CIN on the page must match the one we asked for, else the slug resolved to another company
                     d["cin_match"] = (d.get("cin_on_page") == cin)
                     hub.record(cin, {"cin": cin, **d})
@@ -91,7 +91,7 @@ def work_item(hub, item, pool, delay):
             elif st == "missing":
                 hub.record(cin, {"cin": cin, "missing": True})
                 ok += 1
-    if tarb.tell():
+    if pages:                           # a closed empty tar still has 10 KB of end blocks: upload only real pages
         hub.upload_many([(f"corpdir/{item['key']}.tar", tarb.getvalue(), "application/x-tar")])
     bad = [c for c, st, _ in res if st in ("block", "error", "skip")]
     if len(bad) > len(rows) // 5:
